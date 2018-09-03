@@ -24,48 +24,48 @@
  */
 package net.runelite.client.plugins.runecrafttwo;
 
+import java.awt.image.BufferedImage;
+import javax.inject.Inject;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 
-import javax.inject.Inject;
-import java.awt.image.BufferedImage;
-
 @PluginDescriptor(
-	name = "Runecrafting Panel",
-	description = "Enable the Runecrafting Panel",
-	loadWhenOutdated = true
+    name = "Runecrafting Panel",
+    description = "Enable the Runecrafting Panel",
+    loadWhenOutdated = true
 )
 public class RunecraftTwoPlugin extends Plugin
 {
-	@Inject
-	private ClientToolbar clientToolbar;
+    @Inject
+    private ClientToolbar clientToolbar;
 
-	private NavigationButton navButton;
 
-	@Override
-	protected void startUp() throws Exception
-	{
-		final RunecraftTwoPanel panel = injector.getInstance(RunecraftTwoPanel.class);
-		panel.init();
+    private NavigationButton navButton;
 
-		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "rc_icon.png");
+    @Override
+    protected void startUp() throws Exception
+    {
+        final RunecraftTwoPanel panel = injector.getInstance(RunecraftTwoPanel.class);
+        panel.init();
 
-		navButton = NavigationButton.builder()
-			.tooltip("Runecrafting")
-			.icon(icon)
-			.priority(9)
-			.panel(panel)
-			.build();
+        final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "rc_icon.png");
 
-		clientToolbar.addNavigation(navButton);
-	}
+        navButton = NavigationButton.builder()
+            .tooltip("Runecrafting")
+            .icon(icon)
+            .priority(9)
+            .panel(panel)
+            .build();
 
-	@Override
-	protected void shutDown()
-	{
-		clientToolbar.removeNavigation(navButton);
-	}
+        clientToolbar.addNavigation(navButton);
+    }
+
+    @Override
+    protected void shutDown()
+    {
+        clientToolbar.removeNavigation(navButton);
+    }
 }
