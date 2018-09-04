@@ -131,10 +131,11 @@ public class RunecraftTwoPlugin extends Plugin
         Duration statTimeout = Duration.ofMinutes(config.statTimeout());
         Duration sinceCut = Duration.between(session.getLastRuneCraft(), Instant.now());
 
-        if (sinceCut.compareTo(statTimeout) >= 0)
+        if (sinceCut.compareTo(statTimeout) >= 0 || panel.pause)
         {
             session = null;
             timer = null;
+            panel.pause = false;
         }
         if (panel.reset)
         {
@@ -157,6 +158,10 @@ public class RunecraftTwoPlugin extends Plugin
                 if (session == null)
                 {
                     session = new RunecraftTwoSession();
+                    if (stats.totalLapTime != 0)
+                    {
+                        stats.totalLapTime += stats.totalLapTime / stats.laps;
+                    }
                 }
                 session.setLastRuneCraft();
             }
@@ -240,10 +245,14 @@ public class RunecraftTwoPlugin extends Plugin
                     timer.stop();
                     stats.lapTime = timer.elapsed(TimeUnit.SECONDS);
                     stats.totalLapTime += stats.lapTime;
-
+                    if (stats.laps == 0)
+                    {
+                        stats.laps = 1;
+                        stats.totalLapTime += stats.lapTime;
+                    }
+                    stats.laps += 1;
                 }
                 timer = Stopwatch.createStarted();
-                stats.laps += 1;
             }
         }
 
@@ -299,10 +308,10 @@ public class RunecraftTwoPlugin extends Plugin
                 output.append("<br>");
                 output.append("Laps: ").append(Integer.toString(stats.laps)).append("<br>");
                 output.append("Lap Time: ").append(formatTime(stats.lapTime / 60, stats.lapTime % 60)).append("<br>");
-                long averageMinutes = (stats.totalLapTime / (stats.laps - 1)) / 60;
-                long averageSeconds = (stats.totalLapTime / (stats.laps - 1)) % 60;
+                long averageMinutes = (stats.totalLapTime / (stats.laps)) / 60;
+                long averageSeconds = (stats.totalLapTime / (stats.laps)) % 60;
                 output.append("Average Lap Time: ").append(formatTime(averageMinutes, averageSeconds)).append("<br>");
-                output.append("Total Time: ").append(formatTime(stats.totalLapTime / 60, stats.totalLapTime % 60)).append("<br>");
+                output.append("Total Time: ").append(formatTime(stats.totalLapTime / 60, stats.totalLapTime % 60));
 
             }
 

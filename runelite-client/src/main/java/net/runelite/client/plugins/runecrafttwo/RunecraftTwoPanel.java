@@ -35,7 +35,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -51,6 +50,8 @@ public class RunecraftTwoPanel extends PluginPanel
     final JLabel statsLabel = new JLabel();
     private final JPanel runePanel = new JPanel();
     public boolean reset = false;
+    public boolean pause = false;
+
     private RunecraftTwoPlugin runePlugin;
     @Inject
     private EventBus eventBus;
@@ -69,17 +70,21 @@ public class RunecraftTwoPanel extends PluginPanel
 
         statsLabel.setFont(smallFont);
         runePanel.add(statsLabel);
-        runePanel.add(Box.createGlue());
 
-        add(runePanel, BorderLayout.NORTH);
         JPanel gap = new JPanel();
         gap.setBackground(ColorScheme.DARK_GRAY_COLOR);
         gap.setBorder(new EmptyBorder(1, 10, 1, 10));
-        add(gap, BorderLayout.CENTER);
 
-        JPanel resetPanel = new JPanel();
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        buttonPanel.setLayout(new BorderLayout());
+        buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+
         final Color hoverColor = ColorScheme.DARKER_GRAY_HOVER_COLOR;
         final Color pressedColor = ColorScheme.DARKER_GRAY_COLOR.brighter();
+
+        JPanel resetPanel = new JPanel();
         resetPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         resetPanel.setLayout(new BorderLayout());
         resetPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -114,7 +119,49 @@ public class RunecraftTwoPanel extends PluginPanel
                 resetPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
-        add(resetPanel, BorderLayout.SOUTH);
+
+        JPanel pausePanel = new JPanel();
+        pausePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        pausePanel.setLayout(new BorderLayout());
+        pausePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        JLabel pauseLabel = new JLabel("Pause", SwingConstants.CENTER);
+        pausePanel.add(pauseLabel);
+        pausePanel.addMouseListener(new MouseAdapter()
+        {
+            @Override
+            public void mousePressed(MouseEvent mouseEvent)
+            {
+                pausePanel.setBackground(pressedColor);
+                pause = true;
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e)
+            {
+                pausePanel.setBackground(hoverColor);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e)
+            {
+                pausePanel.setBackground(hoverColor);
+                pausePanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e)
+            {
+                pausePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                pausePanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
+
+        buttonPanel.add(pausePanel, BorderLayout.NORTH);
+        buttonPanel.add(resetPanel, BorderLayout.SOUTH);
+        add(runePanel, BorderLayout.NORTH);
+        add(gap, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+
         eventBus.register(this);
     }
 }
