@@ -3,7 +3,7 @@ package net.runelite.client.plugins.runecrafttwo;
 import lombok.Getter;
 import lombok.Setter;
 
-class Rune
+public class Rune
 {
 
     @Getter
@@ -23,6 +23,10 @@ class Rune
     @Setter
     int carried;
 
+    @Getter
+    @Setter
+    int count;
+
     public Rune(double exp, String name, int id)
     {
         this.exp = exp;
@@ -30,5 +34,6 @@ class Rune
         this.id = id;
         this.crafted = 0;
         this.carried = 0;
+        this.count = 0;
     }
 }

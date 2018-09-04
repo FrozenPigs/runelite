@@ -25,50 +25,64 @@
  */
 package net.runelite.client.plugins.runecrafttwo;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.inject.Inject;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import lombok.Getter;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.Skill;
+import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 
+
 @Singleton
 public class RunecraftTwoPanel extends PluginPanel
 {
-    public JPanel runePanel = new JPanel();
+    public final Map<Integer, Rune> RUNES = new HashMap<>();
+    private final JPanel runePanel = new JPanel();
+    private final JLabel label1 = new JLabel();
+    public RunecraftTwoSession session;
     @Inject
     private EventBus eventBus;
     @Inject
     private Client client;
-    @Getter
-    private Map<Integer, Rune> RUNES = new HashMap<>();
-    private JLabel label1 = new JLabel();
-
-    private boolean started = false;
+    @Inject
+    private
+    ItemManager itemManager;
+    private int craftedRunes = 0;
     private int carriedEssence = 0;
     private int craftedEssence = 0;
+    private int laps = 0;
+    private long totalLapTime = 0;
+    private String lapTime = "";
+    private Stopwatch timer;
+    private int startXp = 0;
+    private int currentXp = 0;
     private ItemContainer itemContainer;
 
-    private Item[] items;
 
     void init()
     {
@@ -91,90 +105,166 @@ public class RunecraftTwoPanel extends PluginPanel
         eventBus.register(this);
     }
 
-    @Subscribe
-    public void onGameTick(GameTick gameTick)
 
+    private void checkInv()
     {
-        if (this.RUNES.isEmpty())
+        int lastEssence = this.carriedEssence;
+        int essence = 0;
+        int totalRunes = 0;
+
+        for (Rune rune : RUNES.values())
         {
-            this.RUNES.put(ItemID.AIR_RUNE, new Rune(5, "Air", ItemID.AIR_RUNE));
-            this.RUNES.put(ItemID.MIND_RUNE, new Rune(5.5, "Mind", ItemID.MIND_RUNE));
-            this.RUNES.put(ItemID.WATER_RUNE, new Rune(6, "Water", ItemID.WATER_RUNE));
-            this.RUNES.put(ItemID.EARTH_RUNE, new Rune(6.5, "Earth", ItemID.EARTH_RUNE));
-            this.RUNES.put(ItemID.FIRE_RUNE, new Rune(7, "Fire", ItemID.FIRE_RUNE));
-            this.RUNES.put(ItemID.BODY_RUNE, new Rune(7.5, "Body", ItemID.BODY_RUNE));
-            this.RUNES.put(ItemID.COSMIC_RUNE, new Rune(8, "Cosmic", ItemID.COSMIC_RUNE));
-            this.RUNES.put(ItemID.CHAOS_RUNE, new Rune(8.5, "Chaos", ItemID.CHAOS_RUNE));
-            this.RUNES.put(ItemID.ASTRAL_RUNE, new Rune(8.7, "Astral", ItemID.ASTRAL_RUNE));
-            this.RUNES.put(ItemID.NATURE_RUNE, new Rune(9, "Nature", ItemID.NATURE_RUNE));
-            this.RUNES.put(ItemID.LAW_RUNE, new Rune(9.5, "Law", ItemID.LAW_RUNE));
-            this.RUNES.put(ItemID.DEATH_RUNE, new Rune(10, "Death", ItemID.DEATH_RUNE));
-            this.started = true;
+            rune.setCount(0);
         }
-        checkInv();
-    }
-
-    public void checkInv()
-    {
-        int count = 0;
-        Item[] items = this.itemContainer.getItems();
-        for (int i = 0; i < 28; i++)
+        if (itemContainer == null)
         {
-            if (i < items.length)
+            return;
+        }
+
+        Item[] items = this.itemContainer.getItems();
+        if (items != null)
+        {
+            for (Item item : items)
             {
-                switch (items[i].getId())
+                if (item == null)
                 {
-                    case ItemID.AIR_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.MIND_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.WATER_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.EARTH_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.FIRE_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.BODY_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.COSMIC_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.CHAOS_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.ASTRAL_RUNE:
-                        if (this.RUNES.get(items[i].getId()).carried < items[i].getQuantity())
-                        {
-                            this.RUNES.get(items[i].getId()).crafted = items[i].getQuantity() - this.RUNES.get(items[i].getId()).carried;
-                            this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                        }
-                    case ItemID.NATURE_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.LAW_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.DEATH_RUNE:
-                        this.RUNES.get(items[i].getId()).carried = items[i].getQuantity();
-                    case ItemID.PURE_ESSENCE:
-                        count++;
+                    continue;
+                }
+                if (item.getId() == ItemID.PURE_ESSENCE)
+                {
+                    essence++;
+                }
+                if (this.RUNES.containsKey(item.getId()))
+                {
+                    Rune runeItem = this.RUNES.get(item.getId());
+                    runeItem.setCount(item.getQuantity());
+                    this.RUNES.put(item.getId(), runeItem);
+                    totalRunes += item.getQuantity();
                 }
             }
         }
-        this.carriedEssence = count;
+
+        if (essence == 0 && this.carriedEssence != 0)
+        {
+            int pouchEssence = 0;
+            for (Rune rune : this.RUNES.values())
+            {
+                if (rune.getCount() > rune.getCarried())
+                {
+                    this.craftedEssence += lastEssence;
+                    this.craftedRunes += rune.getCount() - rune.getCarried();
+                    rune.setCrafted(rune.getCrafted() + (rune.getCount() - rune.getCarried()));
+                }
+
+                for (Item item : this.itemContainer.getItems())
+                {
+                    if (ItemID.GIANT_POUCH == item.getId())
+                    {
+                        pouchEssence += client.getVar(Varbits.POUCH_GIANT);
+                    }
+                    if (ItemID.LARGE_POUCH == item.getId())
+                    {
+                        pouchEssence += client.getVar(Varbits.POUCH_LARGE);
+                    }
+                    if (ItemID.MEDIUM_POUCH == item.getId())
+                    {
+                        pouchEssence += client.getVar(Varbits.POUCH_MEDIUM);
+                    }
+                    if (ItemID.SMALL_POUCH == item.getId())
+                    {
+                        pouchEssence += client.getVar(Varbits.POUCH_SMALL);
+                    }
+                }
+
+            }
+
+            if (pouchEssence == 0)
+            {
+                if (this.timer != null)
+                {
+                    this.timer.stop();
+                    long elapsedSeconds = this.timer.elapsed(TimeUnit.SECONDS);
+                    long minutes = elapsedSeconds / 60;
+                    long seconds = elapsedSeconds % 60;
+                    this.totalLapTime += elapsedSeconds;
+                    if (seconds < 10)
+                    {
+                        this.lapTime = Long.toString(minutes) + ":0" + Long.toString(seconds);
+                    }
+                    else
+                    {
+                        this.lapTime = Long.toString(minutes) + ":" + Long.toString(seconds);
+                    }
+                }
+                this.timer = Stopwatch.createStarted();
+                this.laps += 1;
+            }
+        }
+        for (Rune rune : this.RUNES.values())
+        {
+            rune.setCarried(rune.getCount());
+        }
+        this.carriedEssence = essence;
     }
 
 
     @Subscribe
     public void onItemContainerChanged(ItemContainerChanged itemContainerChanged)
     {
-
+        this.currentXp += client.getSkillExperience(Skill.RUNECRAFT);
+        int gainedXp = this.currentXp - this.startXp;
+        int totalProfit = 0;
         ItemContainer itemContainer = itemContainerChanged.getItemContainer();
         if (itemContainer == client.getItemContainer(InventoryID.INVENTORY))
         {
+            StringBuilder output = new StringBuilder("<html><body>");
             this.itemContainer = itemContainer;
-            if (!this.started)
-            {
-                return;
-            }
             checkInv();
-            label1.setText(Integer.toString(this.craftedEssence) + " " + Integer.toString(this.RUNES.get(ItemID.ASTRAL_RUNE).crafted));
+
+            for (Rune rune : RUNES.values())
+            {
+                if (rune.crafted > 0)
+                {
+                    int profit = itemManager.getItemPrice(rune.id) * rune.crafted;
+                    totalProfit += profit;
+                    output.append(rune.name).append(" Runes: ").append(Integer.toString(rune.crafted)).append(" / ").append(NumberFormat.getNumberInstance(Locale.US).format(totalProfit)).append("gp<br>");
+                }
+            }
+            output.append("<br>");
+            output.append("Total Runes: ").append(Integer.toString(this.craftedRunes)).append(" / ").append(NumberFormat.getNumberInstance(Locale.US).format(totalProfit)).append("gp<br>");
+            output.append("Total Essence: ").append(Integer.toString(this.craftedEssence)).append("<br>");
+            int gph = (int) (1.0 / (this.totalLapTime / 3600.0)) * totalProfit;
+            output.append("gp/h: ").append(NumberFormat.getNumberInstance(Locale.US).format(gph)).append("<br>");
+            output.append("<br>");
+            output.append("Laps: ").append(Integer.toString(this.laps)).append("<br>");
+
+            if (!Objects.equals(this.lapTime, ""))
+            {
+                long averageMinutes = (this.totalLapTime / (this.laps - 1)) / 60;
+                long averageSeconds = (this.totalLapTime / (this.laps - 1)) % 60;
+                output.append("Lap Time: ").append(this.lapTime).append("<br>");
+                if (averageSeconds < 10)
+                {
+                    output.append("Average Lap Time: ").append(Long.toString(averageMinutes)).append(":0").append(Long.toString(averageSeconds)).append("<br>");
+                }
+                else
+                {
+                    output.append("Average Lap Time: ").append(Long.toString(averageMinutes)).append(":").append(Long.toString(averageSeconds)).append("<br>");
+                }
+                long totalMinutes = this.totalLapTime / 60;
+                long totalSeconds = this.totalLapTime % 60;
+                if (totalSeconds < 10)
+                {
+                    output.append("Total Time: ").append(Long.toString(totalMinutes)).append(":0").append(Long.toString(totalSeconds)).append("<br>");
+                }
+                else
+                {
+                    output.append("Total Time: ").append(Long.toString(totalMinutes)).append(":").append(Long.toString(totalSeconds)).append("<br>");
+                }
+            }
+
+            output.append("</body></html>");
+            label1.setText(output.toString());
         }
     }
 
@@ -186,7 +276,12 @@ public class RunecraftTwoPanel extends PluginPanel
         {
             if (event.getMessage().startsWith("You bind the temple") && event.getMessage().endsWith("runes."))
             {
-                this.craftedEssence += this.carriedEssence;
+                if (session == null)
+                {
+                    session = new RunecraftTwoSession();
+                    this.startXp = client.getSkillExperience(Skill.RUNECRAFT);
+                }
+                session.setLastRuneCraft();
             }
         }
     }
