@@ -25,7 +25,7 @@ public class Rune
 
     @Getter
     @Setter
-    int count;
+    int tmpCarried;
 
     public Rune(double exp, String name, int id)
     {
@@ -34,6 +34,6 @@ public class Rune
         this.id = id;
         this.crafted = 0;
         this.carried = 0;
-        this.count = 0;
+        this.tmpCarried = 0;
     }
 }

@@ -24,15 +24,28 @@
  */
 package net.runelite.client.plugins.runecrafttwo;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.Varbits;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -46,14 +59,21 @@ import net.runelite.client.util.ImageUtil;
 )
 public class RunecraftTwoPlugin extends Plugin
 {
-    @Inject
-    private ClientToolbar clientToolbar;
-
-    private RunecraftTwoPanel panel;
+    private RunecraftTwoSession session;
+    private Stopwatch timer;
+    private Stats stats = new Stats();
     @Inject
     private
-    RunecraftTwoConfig config;
+    ItemManager itemManager;
+    @Inject
+    private Client client;
+    @Inject
+    private ClientToolbar clientToolbar;
+    @Inject
+    private RunecraftTwoConfig config;
+    private RunecraftTwoPanel panel;
     private NavigationButton navButton;
+    private int carriedEssence = 0;
 
     @Provides
     RunecraftTwoConfig getConfig(ConfigManager configManager)
@@ -64,9 +84,8 @@ public class RunecraftTwoPlugin extends Plugin
     @Override
     protected void startUp()
     {
-
-        this.panel = injector.getInstance(RunecraftTwoPanel.class);
-        this.panel.init();
+        panel = injector.getInstance(RunecraftTwoPanel.class);
+        panel.init();
 
         final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "rc_icon.png");
 
@@ -90,31 +109,205 @@ public class RunecraftTwoPlugin extends Plugin
     public void onGameTick(GameTick gameTick)
 
     {
-        if (this.panel.RUNES.isEmpty())
+        if (stats.RUNES.isEmpty())
         {
-            this.panel.RUNES.put(ItemID.AIR_RUNE, new Rune(5, "Air", ItemID.AIR_RUNE));
-            this.panel.RUNES.put(ItemID.MIND_RUNE, new Rune(5.5, "Mind", ItemID.MIND_RUNE));
-            this.panel.RUNES.put(ItemID.WATER_RUNE, new Rune(6, "Water", ItemID.WATER_RUNE));
-            this.panel.RUNES.put(ItemID.EARTH_RUNE, new Rune(6.5, "Earth", ItemID.EARTH_RUNE));
-            this.panel.RUNES.put(ItemID.FIRE_RUNE, new Rune(7, "Fire", ItemID.FIRE_RUNE));
-            this.panel.RUNES.put(ItemID.BODY_RUNE, new Rune(7.5, "Body", ItemID.BODY_RUNE));
-            this.panel.RUNES.put(ItemID.COSMIC_RUNE, new Rune(8, "Cosmic", ItemID.COSMIC_RUNE));
-            this.panel.RUNES.put(ItemID.CHAOS_RUNE, new Rune(8.5, "Chaos", ItemID.CHAOS_RUNE));
-            this.panel.RUNES.put(ItemID.ASTRAL_RUNE, new Rune(8.7, "Astral", ItemID.ASTRAL_RUNE));
-            this.panel.RUNES.put(ItemID.NATURE_RUNE, new Rune(9, "Nature", ItemID.NATURE_RUNE));
-            this.panel.RUNES.put(ItemID.LAW_RUNE, new Rune(9.5, "Law", ItemID.LAW_RUNE));
-            this.panel.RUNES.put(ItemID.DEATH_RUNE, new Rune(10, "Death", ItemID.DEATH_RUNE));
+            stats.RUNES.put(ItemID.AIR_RUNE, new Rune(5, "Air", ItemID.AIR_RUNE));
+            stats.RUNES.put(ItemID.MIND_RUNE, new Rune(5.5, "Mind", ItemID.MIND_RUNE));
+            stats.RUNES.put(ItemID.WATER_RUNE, new Rune(6, "Water", ItemID.WATER_RUNE));
+            stats.RUNES.put(ItemID.EARTH_RUNE, new Rune(6.5, "Earth", ItemID.EARTH_RUNE));
+            stats.RUNES.put(ItemID.FIRE_RUNE, new Rune(7, "Fire", ItemID.FIRE_RUNE));
+            stats.RUNES.put(ItemID.BODY_RUNE, new Rune(7.5, "Body", ItemID.BODY_RUNE));
+            stats.RUNES.put(ItemID.COSMIC_RUNE, new Rune(8, "Cosmic", ItemID.COSMIC_RUNE));
+            stats.RUNES.put(ItemID.CHAOS_RUNE, new Rune(8.5, "Chaos", ItemID.CHAOS_RUNE));
+            stats.RUNES.put(ItemID.ASTRAL_RUNE, new Rune(8.7, "Astral", ItemID.ASTRAL_RUNE));
+            stats.RUNES.put(ItemID.NATURE_RUNE, new Rune(9, "Nature", ItemID.NATURE_RUNE));
+            stats.RUNES.put(ItemID.LAW_RUNE, new Rune(9.5, "Law", ItemID.LAW_RUNE));
+            stats.RUNES.put(ItemID.DEATH_RUNE, new Rune(10, "Death", ItemID.DEATH_RUNE));
         }
-        if (this.panel.session == null)
+        if (session == null)
         {
             return;
         }
         Duration statTimeout = Duration.ofMinutes(config.statTimeout());
-        Duration sinceCut = Duration.between(this.panel.session.getLastRuneCraft(), Instant.now());
+        Duration sinceCut = Duration.between(session.getLastRuneCraft(), Instant.now());
 
         if (sinceCut.compareTo(statTimeout) >= 0)
         {
-            this.panel.session = null;
+            session = null;
+            timer = null;
+        }
+        if (panel.reset)
+        {
+            session = null;
+            stats = new Stats();
+            timer = null;
+            panel.reset = false;
+            panel.statsLabel.setText("");
+
+        }
+    }
+
+    @Subscribe
+    public void onChatMessage(ChatMessage event)
+    {
+        if (event.getType() == ChatMessageType.FILTERED || event.getType() == ChatMessageType.SERVER)
+        {
+            if (event.getMessage().startsWith("You bind the temple") && event.getMessage().endsWith("runes."))
+            {
+                if (session == null)
+                {
+                    session = new RunecraftTwoSession();
+                }
+                session.setLastRuneCraft();
+            }
+        }
+    }
+
+
+    private void checkInv(ItemContainer itemContainer)
+    {
+        int lastCarriedEssence = carriedEssence;
+        int tmpCarriedEssence = 0;
+        for (Rune rune : stats.RUNES.values())
+        {
+            rune.setTmpCarried(0);
+        }
+        // Stop if empty inv
+        if (itemContainer == null)
+        {
+            return;
+        }
+
+        // Count pure ess and current carried runes
+        Item[] items = itemContainer.getItems();
+        if (items != null)
+        {
+            for (Item item : items)
+            {
+                if (item == null)
+                {
+                    continue;
+                }
+                if (item.getId() == ItemID.PURE_ESSENCE)
+                {
+                    tmpCarriedEssence++;
+                }
+                if (stats.RUNES.containsKey(item.getId()))
+                {
+                    Rune runeItem = stats.RUNES.get(item.getId());
+                    runeItem.setTmpCarried(item.getQuantity());
+                    stats.RUNES.put(item.getId(), runeItem);
+                }
+            }
+        }
+
+        // if no carried essence updated runes and essence crafted, check pouches for lap timer
+        if (tmpCarriedEssence == 0 && carriedEssence != 0)
+        {
+            int pouchEssence = 0;
+            for (Rune rune : stats.RUNES.values())
+            {
+                if (rune.getTmpCarried() > rune.getCarried())
+                {
+                    stats.craftedEssence += lastCarriedEssence;
+                    stats.craftedRunes += rune.getTmpCarried() - rune.getCarried();
+                    rune.setCrafted(rune.getCrafted() + (rune.getTmpCarried() - rune.getCarried()));
+                }
+
+                for (Item item : itemContainer.getItems())
+                {
+                    switch (item.getId())
+                    {
+                        case ItemID.GIANT_POUCH:
+                            pouchEssence += client.getVar(Varbits.POUCH_GIANT);
+                        case ItemID.LARGE_POUCH:
+                            pouchEssence += client.getVar(Varbits.POUCH_LARGE);
+                        case ItemID.MEDIUM_POUCH:
+                            pouchEssence += client.getVar(Varbits.POUCH_MEDIUM);
+                        case ItemID.SMALL_POUCH:
+                            pouchEssence += client.getVar(Varbits.POUCH_SMALL);
+
+                    }
+                }
+
+            }
+
+            // if no essence start new lap
+            if (pouchEssence == 0)
+            {
+                if (timer != null)
+                {
+                    timer.stop();
+                    stats.lapTime = timer.elapsed(TimeUnit.SECONDS);
+                    stats.totalLapTime += stats.lapTime;
+
+                }
+                timer = Stopwatch.createStarted();
+                stats.laps += 1;
+            }
+        }
+
+        // update carried ess and runes
+        for (Rune rune : stats.RUNES.values())
+        {
+            rune.setCarried(rune.getTmpCarried());
+        }
+        carriedEssence = tmpCarriedEssence;
+    }
+
+    private String formatTime(long minutes, long seconds)
+    {
+        String output;
+        if ((seconds % 60) < 10)
+        {
+            output = Long.toString(minutes) + ":0" + Long.toString(seconds);
+        }
+        else
+        {
+            output = Long.toString(minutes) + ":" + Long.toString(seconds);
+        }
+        return output;
+    }
+
+    @Subscribe
+    public void onItemContainerChanged(ItemContainerChanged itemContainerChanged)
+    {
+        ItemContainer itemContainer = itemContainerChanged.getItemContainer();
+        if (itemContainer == client.getItemContainer(InventoryID.INVENTORY))
+        {
+            StringBuilder output = new StringBuilder("<html><body>");
+            checkInv(itemContainer);
+            int tmpProfit = 0;
+            for (Rune rune : stats.RUNES.values())
+            {
+                if (rune.getCrafted() > 0)
+                {
+                    int profit = itemManager.getItemPrice(rune.getId()) * rune.getCrafted();
+                    tmpProfit += profit;
+                    output.append(rune.name).append(" Runes: ").append(Integer.toString(rune.getCrafted()));
+                    output.append(" / ").append(NumberFormat.getNumberInstance(Locale.US).format(profit)).append("gp<br>");
+                }
+            }
+            stats.totalProfit = tmpProfit;
+            output.append("<br>");
+            output.append("Crafted Runes: ").append(Integer.toString(stats.craftedRunes)).append(" / ").append(NumberFormat.getNumberInstance(Locale.US).format(stats.totalProfit)).append("gp<br>");
+            output.append("Crafted Essence: ").append(Integer.toString(stats.craftedEssence)).append("<br>");
+            if (stats.lapTime != 0)
+            {
+                int gph = (int) (1.0 / (stats.totalLapTime / 3600.0)) * stats.totalProfit;
+                output.append("gp/h: ").append(NumberFormat.getNumberInstance(Locale.US).format(gph)).append("<br>");
+                output.append("<br>");
+                output.append("Laps: ").append(Integer.toString(stats.laps)).append("<br>");
+                output.append("Lap Time: ").append(formatTime(stats.lapTime / 60, stats.lapTime % 60)).append("<br>");
+                long averageMinutes = (stats.totalLapTime / (stats.laps - 1)) / 60;
+                long averageSeconds = (stats.totalLapTime / (stats.laps - 1)) % 60;
+                output.append("Average Lap Time: ").append(formatTime(averageMinutes, averageSeconds)).append("<br>");
+                output.append("Total Time: ").append(formatTime(stats.totalLapTime / 60, stats.totalLapTime % 60)).append("<br>");
+
+            }
+
+            output.append("</body></html>");
+            panel.statsLabel.setText(output.toString());
         }
     }
 }
