@@ -123,8 +123,9 @@ public class WidgetInfoTableModel extends AbstractTableModel
 			(w, str) -> w.setTextColor(Integer.parseInt(str, 16)),
 			String.class
 		));
+		out.add(new WidgetField<>("FontId", Widget::getFontId, Widget::setFontId, Integer.class));
 		out.add(new WidgetField<>("Name", w -> w.getName().trim(), Widget::setName, String.class));
-		out.add(new WidgetField<>("ItemId", Widget::getItemId));
+		out.add(new WidgetField<>("ItemId", Widget::getItemId, Widget::setItemId, Integer.class));
 		out.add(new WidgetField<>("ItemQuantity", Widget::getItemQuantity));
 		out.add(new WidgetField<>("ModelId", Widget::getModelId));
 		out.add(new WidgetField<>("SpriteId", Widget::getSpriteId, Widget::setSpriteId, Integer.class));
