@@ -31,9 +31,10 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,7 @@ public class LootManager
 	private final EventBus eventBus;
 	private final Client client;
 	private final ListMultimap<Integer, ItemStack> itemSpawns = ArrayListMultimap.create();
-	private final Map<LocalPoint, Boolean> killMap = new HashMap<>();
+	private final Set<LocalPoint> killPoints = new HashSet<>();
 	private WorldPoint playerLocationLastTick;
 	private WorldPoint krakenPlayerLocation;
 
@@ -132,7 +133,7 @@ public class LootManager
 		}
 
 		final LocalPoint location = LocalPoint.fromWorld(client, player.getWorldLocation());
-		if (location == null || killMap.get(location))
+		if (location == null || killPoints.contains(location))
 		{
 			return;
 		}
@@ -147,7 +148,7 @@ public class LootManager
 			return;
 		}
 
-		killMap.put(location, true);
+		killPoints.add(location);
 		eventBus.post(new PlayerLootReceived(player, items));
 	}
 
@@ -214,13 +215,13 @@ public class LootManager
 	{
 		playerLocationLastTick = client.getLocalPlayer().getWorldLocation();
 		itemSpawns.clear();
-		killMap.clear();
+		killPoints.clear();
 	}
 
 	private void processNpcLoot(NPC npc)
 	{
 		final LocalPoint location = LocalPoint.fromWorld(client, getDropLocation(npc, npc.getWorldLocation()));
-		if (location == null || killMap.get(location))
+		if (location == null || killPoints.contains(location))
 		{
 			return;
 		}
@@ -246,7 +247,7 @@ public class LootManager
 			return;
 		}
 
-		killMap.put(location, true);
+		killPoints.add(location);
 		eventBus.post(new NpcLootReceived(npc, allItems));
 	}
 
