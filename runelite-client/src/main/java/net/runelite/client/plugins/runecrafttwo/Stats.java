@@ -39,6 +39,30 @@ public class Stats
     @Setter
     public long totalLapTime;
 
+    @Getter
+    @Setter
+    public int degrades;
+
+    @Getter
+    @Setter
+    public int lastDegrades;
+
+    @Getter
+    @Setter
+    public String pouch;
+
+    @Getter
+    @Setter
+    public int pouchCount;
+
+    @Getter
+    @Setter
+    public int lastPouchCount;
+
+    @Getter
+    @Setter
+    public int pouchSize;
+
     public Stats()
     {
         craftedRunes = 0;
@@ -48,5 +72,11 @@ public class Stats
         laps = 0;
         lapTime = 0;
         totalLapTime = 0;
+        degrades = 0;
+        lastDegrades = 0;
+        pouch = "";
+        pouchCount = 0;
+        lastPouchCount = 0;
+        pouchSize = 0;
     }
 }
