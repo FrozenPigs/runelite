@@ -219,7 +219,12 @@ public interface RSWidget extends Widget
 	void setSpriteId(int spriteId);
 
 	@Import("borderThickness")
+	@Override
 	int getBorderThickness();
+
+	@Import("borderThickness")
+	@Override
+	void setBorderThickness(int thickness);
 
 	@Import("itemId")
 	@Override
@@ -232,6 +237,10 @@ public interface RSWidget extends Widget
 	@Import("itemQuantity")
 	@Override
 	int getItemQuantity();
+
+	@Import("itemQuantity")
+	@Override
+	void setItemQuantity(int quantity);
 
 	@Import("originalX")
 	@Override
@@ -317,4 +326,12 @@ public interface RSWidget extends Widget
 	@Import("fontId")
 	@Override
 	void setFontId(int id);
+
+	@Import("textShadowed")
+	@Override
+	boolean getTextShadowed();
+
+	@Import("textShadowed")
+	@Override
+	void setTextShadowed(boolean shadowed);
 }
