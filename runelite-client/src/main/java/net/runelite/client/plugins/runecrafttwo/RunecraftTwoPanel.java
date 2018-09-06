@@ -47,8 +47,9 @@ import net.runelite.client.ui.PluginPanel;
 @Singleton
 public class RunecraftTwoPanel extends PluginPanel
 {
-    final JLabel statsLabel = new JLabel();
-    private final JPanel runePanel = new JPanel();
+	final JLabel statsLabel = new JLabel();
+	final JLabel gpxpLabel = new JLabel();
+	private final JPanel runePanel = new JPanel();
     public boolean reset = false;
     public boolean pause = false;
 
@@ -71,12 +72,8 @@ public class RunecraftTwoPanel extends PluginPanel
         statsLabel.setFont(smallFont);
         runePanel.add(statsLabel);
 
-        JPanel gap = new JPanel();
-        gap.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        gap.setBorder(new EmptyBorder(1, 10, 1, 10));
-
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        buttonPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
         buttonPanel.setLayout(new BorderLayout());
         buttonPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -158,10 +155,16 @@ public class RunecraftTwoPanel extends PluginPanel
 
         buttonPanel.add(pausePanel, BorderLayout.NORTH);
         buttonPanel.add(resetPanel, BorderLayout.SOUTH);
-        add(runePanel, BorderLayout.NORTH);
-        add(gap, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
 
-        eventBus.register(this);
+        JPanel gpxp = new JPanel();
+		gpxp.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		gpxp.setBorder(new EmptyBorder(1, 10, 1, 10));
+		gpxp.add(gpxpLabel);
+
+        add(runePanel, BorderLayout.NORTH);
+        add(buttonPanel, BorderLayout.CENTER);
+		add(gpxp, BorderLayout.SOUTH);
+
+		eventBus.register(this);
     }
 }

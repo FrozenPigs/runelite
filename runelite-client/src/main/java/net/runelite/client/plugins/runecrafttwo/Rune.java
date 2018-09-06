@@ -27,6 +27,10 @@ public class Rune
     @Setter
     int tmpCarried;
 
+    @Getter
+	@Setter
+	int[] multiLevels;
+
     public Rune(double exp, String name, int id)
     {
         this.exp = exp;

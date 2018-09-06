@@ -34,6 +34,8 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -55,6 +57,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.OSType;
 import net.runelite.client.util.QueryRunner;
 
 
@@ -137,6 +140,57 @@ public class RunecraftTwoPlugin extends Plugin
             stats.RUNES.put(ItemID.NATURE_RUNE, new Rune(9, "Nature", ItemID.NATURE_RUNE));
             stats.RUNES.put(ItemID.LAW_RUNE, new Rune(9.5, "Law", ItemID.LAW_RUNE));
             stats.RUNES.put(ItemID.DEATH_RUNE, new Rune(10, "Death", ItemID.DEATH_RUNE));
+            for (Rune rune: stats.RUNES.values())
+			{
+				if (rune.id == ItemID.AIR_RUNE)
+				{
+					rune.multiLevels = new int[]{11, 22, 33, 44, 55, 66, 77, 88, 99};
+				}
+				else if (rune.id == ItemID.MIND_RUNE)
+				{
+					rune.multiLevels = new int[]{14, 28, 42, 56, 70, 84, 98};
+				}
+				else if (rune.id == ItemID.WATER_RUNE)
+				{
+					rune.multiLevels = new int[]{19, 38, 57, 76, 95};
+				}
+				else if (rune.id == ItemID.EARTH_RUNE)
+				{
+					rune.multiLevels = new int[]{26, 52, 78};
+				}
+				else if (rune.id == ItemID.FIRE_RUNE)
+				{
+					rune.multiLevels = new int[]{35, 70};
+				}
+				else if (rune.id == ItemID.BODY_RUNE)
+				{
+					rune.multiLevels = new int[]{46, 92};
+				}
+				else if (rune.id == ItemID.COSMIC_RUNE)
+				{
+					rune.multiLevels = new int[]{59};
+				}
+				else if (rune.id == ItemID.CHAOS_RUNE)
+				{
+					rune.multiLevels = new int[]{74};
+				}
+				else if (rune.id == ItemID.ASTRAL_RUNE)
+				{
+					rune.multiLevels = new int[]{82};
+				}
+				else if (rune.id == ItemID.NATURE_RUNE)
+				{
+					rune.multiLevels = new int[]{91};
+				}
+				else if (rune.id == ItemID.LAW_RUNE)
+				{
+					rune.multiLevels = new int[]{95};
+				}
+				else if (rune.id == ItemID.DEATH_RUNE)
+				{
+					rune.multiLevels = new int[]{99};
+				}
+			}
         }
         if (session == null)
         {
@@ -403,8 +457,16 @@ public class RunecraftTwoPlugin extends Plugin
 
             }
             output.append("<br>Repair your pouch in ").append(Integer.toString(stats.degrades)).append(" essence.");
-            output.append("</body></html>");
+			output.append("</body></html>");
             panel.statsLabel.setText(output.toString());
-        }
+		}
+		StringBuilder gpxpOutput = new StringBuilder("<html><body>");
+        for (Rune rune: stats.RUNES.values()) {
+        	gpxpOutput.append(rune.name).append(" Rune is ").append(Double.toString(rune.exp)).append("xp and ");
+        	double gpxp = itemManager.getItemPrice(rune.getId()) / rune.exp;
+        	gpxpOutput.append(Double.toString(gpxp)).append("gp/xp.<br>");
+		}
+		gpxpOutput.append("</body></html>");
+		panel.gpxpLabel.setText(gpxpOutput.toString());
     }
 }

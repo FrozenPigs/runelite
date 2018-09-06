@@ -174,6 +174,9 @@ public class Notifier
 			case MacOS:
 				sendMacNotification(escapedTitle, escapedMessage, escapedSubtitle);
 				break;
+			case Other:
+				sendLinuxNotification(escapedTitle, escapedMessage, type);
+				break;
 			default:
 				sendTrayNotification(title, message, type);
 		}
