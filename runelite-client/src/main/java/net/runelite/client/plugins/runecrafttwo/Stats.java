@@ -13,6 +13,13 @@ public class Stats
 
     @Getter
     @Setter
+    public int currentXp;
+    @Getter
+    @Setter
+    public int startXp;
+
+    @Getter
+    @Setter
     public int craftedRunes;
 
     @Getter
@@ -65,6 +72,8 @@ public class Stats
 
     public Stats()
     {
+        currentXp = 0;
+        startXp = 0;
         craftedRunes = 0;
         totalProfit = 0;
         craftedEssence = 0;

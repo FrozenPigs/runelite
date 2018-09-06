@@ -41,6 +41,7 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.Query;
+import net.runelite.api.Skill;
 import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
@@ -55,8 +56,6 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QueryRunner;
-
-
 
 
 @PluginDescriptor(
@@ -96,6 +95,7 @@ public class RunecraftTwoPlugin extends Plugin
     @Override
     protected void startUp()
     {
+        stats.startXp = client.getSkillExperience(Skill.RUNECRAFT);
         overlayManager.add(overlay);
         panel = injector.getInstance(RunecraftTwoPanel.class);
         panel.init();
@@ -391,7 +391,7 @@ public class RunecraftTwoPlugin extends Plugin
             output.append("Crafted Essence: ").append(Integer.toString(stats.craftedEssence)).append("<br>");
             if (stats.lapTime != 0)
             {
-                int gph = (int) (1.0 / (stats.totalLapTime / 3600.0)) * stats.totalProfit;
+                double gph = (1.0 / (stats.totalLapTime / 3600.0)) * stats.totalProfit;
                 output.append("gp/h: ").append(NumberFormat.getNumberInstance(Locale.US).format(gph)).append("<br>");
                 output.append("<br>");
                 output.append("Laps: ").append(Integer.toString(stats.laps)).append("<br>");
