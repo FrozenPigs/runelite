@@ -31,11 +31,13 @@ import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import static jdk.nashorn.internal.objects.NativeMath.round;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -59,6 +61,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.OSType;
 import net.runelite.client.util.QueryRunner;
+import org.slf4j.Logger;
 
 
 @PluginDescriptor(
@@ -463,8 +466,19 @@ public class RunecraftTwoPlugin extends Plugin
 		StringBuilder gpxpOutput = new StringBuilder("<html><body>");
         for (Rune rune: stats.RUNES.values()) {
         	gpxpOutput.append(rune.name).append(" Rune is ").append(Double.toString(rune.exp)).append("xp and ");
-        	double gpxp = itemManager.getItemPrice(rune.getId()) / rune.exp;
-        	gpxpOutput.append(Double.toString(gpxp)).append("gp/xp.<br>");
+        	double mult = 1;
+        	int count = 1;
+        	for (int level : rune.multiLevels)
+        	{
+        		if (client.getRealSkillLevel(Skill.RUNECRAFT) > level)
+        		{
+        			count++;
+        			mult = count;
+        		}
+        	}
+
+			double gpxp = (itemManager.getItemPrice(rune.getId()) * mult) / rune.exp;
+			gpxpOutput.append(String.format("%.2f", gpxp)).append("gp/xp.<br>");
 		}
 		gpxpOutput.append("</body></html>");
 		panel.gpxpLabel.setText(gpxpOutput.toString());
