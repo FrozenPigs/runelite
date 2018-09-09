@@ -34,8 +34,8 @@ public interface RunecraftTwoConfig extends Config
     @ConfigItem(
         position = 1,
         keyName = "statTimeout",
-        name = "Hide stats (minutes)",
-        description = "Configures the time until indicator is hidden."
+        name = "Pause Stats",
+        description = "Timeout for when tracking pauses."
     )
     default int statTimeout()
     {

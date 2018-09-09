@@ -62,6 +62,8 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.OSType;
 import net.runelite.client.util.QueryRunner;
 import org.slf4j.Logger;
+import net.runelite.api.GameState;
+
 
 
 @PluginDescriptor(
