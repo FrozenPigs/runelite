@@ -46,7 +46,6 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.Query;
 import net.runelite.api.Skill;
-import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
@@ -302,7 +301,7 @@ public class RunecraftTwoPlugin extends Plugin
             {
                 case ItemID.GIANT_POUCH:
                 case ItemID.GIANT_POUCH_5515:
-                    ess = client.getVar(Varbits.POUCH_GIANT);
+                    ess = 0;
                     if (stats.pouch.equals("giant"))
                     {
                         stats.pouchCount = ess;
@@ -310,7 +309,7 @@ public class RunecraftTwoPlugin extends Plugin
                     pouchEssence += ess;
                 case ItemID.LARGE_POUCH:
                 case ItemID.LARGE_POUCH_5513:
-                    ess = client.getVar(Varbits.POUCH_LARGE);
+                    ess = 0;
                     if (stats.pouch.equals("large"))
                     {
                         stats.pouchCount = ess;
@@ -318,14 +317,14 @@ public class RunecraftTwoPlugin extends Plugin
                     pouchEssence += ess;
                 case ItemID.MEDIUM_POUCH:
                 case ItemID.MEDIUM_POUCH_5511:
-                    ess = client.getVar(Varbits.POUCH_MEDIUM);
+                    ess = 0;
                     if (stats.pouch.equals("medium"))
                     {
                         stats.pouchCount = ess;
                     }
                     pouchEssence += ess;
                 case ItemID.SMALL_POUCH:
-                    pouchEssence += client.getVar(Varbits.POUCH_SMALL);
+                    pouchEssence += 0;
             }
         }
 
